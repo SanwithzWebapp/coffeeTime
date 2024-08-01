@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Page</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai');
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Noto Sans Thai', sans-serif;
+    }
+  </style>
+</head>
+
+<body class="flex justify-center items-center min-h-screen relative">
+  <button id="openModal" class="fixed bottom-4 right-4 bg-yellow-400 text-black rounded-full p-4 shadow-lg">เลี้ยงกาแฟ
+    ☕</button>
+
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center hidden">
+    <div class="bg-white rounded-lg shadow-lg p-6 w-80 relative">
+      <h2 class="text-lg font-semibold mb-4">เลี้ยงกาแฟครูสิทธิชาติ</h2>
+      <div class="flex items-center mb-4">
+        <i class="fas fa-coffee text-2xl text-gray-600"></i>
+        <span class="ml-2 text-xl font-medium">x</span>
+        <div class="ml-2 flex space-x-2">
+          <button id="btn1" class="bg-yellow-400 text-white rounded-full h-10 w-10 flex justify-center items-center"
+            onclick="updateAmount(1, 'btn1')">1</button>
+          <button id="btn3"
+            class="border border-yellow-400 text-yellow-400 rounded-full h-10 w-10 flex justify-center items-center"
+            onclick="updateAmount(3, 'btn3')">3</button>
+          <button id="btn5"
+            class="border border-yellow-400 text-yellow-400 rounded-full h-10 w-10 flex justify-center items-center"
+            onclick="updateAmount(5, 'btn5')">5</button>
+          <input type="text" class="border border-yellow-400 text-center w-12 rounded-full h-10" id="amountInput"
+            value="10" oninput="updateAmount(this.value)">
+        </div>
+      </div>
+      <input type="text" placeholder="Name or @yoursocial" class="w-full border border-gray-300 rounded-lg p-2 mb-4"
+        id="nameInput">
+      <textarea placeholder="Say something nice" class="w-full border border-gray-300 rounded-lg p-2 mb-4"
+        id="messageInput"></textarea>
+      <button id="supportButton" class="bg-yellow-400 text-black w-full rounded-lg p-3 mb-4">สนับสนุน</button>
+      <button id="closeModal" class="absolute top-2 right-2 text-gray-400">&times;</button>
+      <h3 class="text-md text-center font-semibold mt-4 hidden" id="qrHeader">PromptPay QR Code<br />
+        <span class="text-sm">ธนาคารกรุงไทย |เลขที่บัญชี : 9801729317</span>
+      </h3>
+      <img id="qrCode" src="https://promptpay.io/0836712486/5.png" alt="QR Code" class="mt-2 w-full">
+    </div>
+  </div>
+
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwA3OiGZ2RqXp8Hr6i7D32piiYN_oKtnR0DWtpEpbDZ3wtQYWul6venXta4sUGJMP4u/exec';
+
+    document.getElementById('openModal').addEventListener('click', function () {
+      document.getElementById('modal').classList.remove('hidden');
+    });
+
+    document.getElementById('closeModal').addEventListener('click', function () {
+      document.getElementById('modal').classList.add('hidden');
+    });
+
+    // Close modal when clicking outside of it
+    document.getElementById('modal').addEventListener('click', function (e) {
+      if (e.target.id === 'modal') {
+        document.getElementById('modal').classList.add('hidden');
+      }
+    });
+
+    function updateAmount(amount, buttonId) {
+      if (isNaN(amount) || amount <= 0) {
+        amount = 1;
+      }
+      var amountInDollars = amount * 5;
+      var promptPayURL = "https://promptpay.io/0836712486/" + amountInDollars + ".png";
+      document.getElementById('qrCode').src = promptPayURL;
+      document.getElementById('qrHeader').classList.remove('hidden');
+      document.getElementById('qrCode').classList.remove('hidden');
+
+      // Update button styles
+      var buttons = document.querySelectorAll('.flex.space-x-2 button');
+      buttons.forEach(function (btn) {
+        if (btn.id === buttonId) {
+          btn.classList.add('bg-yellow-400', 'text-white');
+          btn.classList.remove('border', 'border-yellow-400', 'text-yellow-400');
+        } else {
+          btn.classList.remove('bg-yellow-400', 'text-white');
+          btn.classList.add('border', 'border-yellow-400', 'text-yellow-400');
+        }
+      });
+    }
+
+    document.getElementById('amountInput').addEventListener('input', function () {
+      updateAmount(this.value);
+    });
+
+    document.getElementById('supportButton').addEventListener('click', function () {
+      var name = document.getElementById('nameInput').value;
+      var message = document.getElementById('messageInput').value;
+      var amount = document.querySelector('.bg-yellow-400.text-white').innerText;
+
+      var data = {
+        name: name,
+        message: message,
+        amount: amount
+      };
+
+      fetch(scriptURL, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      })
+        .then(response => response.json())
+        .then(response => {
+          if (response.status === 'success') {
+            Swal.fire({
+              icon: 'success',
+              title: 'Data saved successfully!',
+              showConfirmButton: false,
+              timer: 1500
+            });
+            // Reset form fields
+            document.getElementById('nameInput').value = '';
+            document.getElementById('messageInput').value = '';
+            document.getElementById('amountInput').value = 10;
+            updateAmount(1, 'btn1');
+            // Close modal
+            document.getElementById('modal').classList.add('hidden');
+          }
+        })
+        .catch(error => console.error('Error!', error.message));
+    });
+
+    // Show the default QR code for 1 coffee cup on page load
+    window.onload = function () {
+      updateAmount(1, 'btn1');
+    };
+  </script>
+</body>
+
+</html>
